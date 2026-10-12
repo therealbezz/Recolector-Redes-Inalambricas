@@ -1,0 +1,6 @@
+/main
+/main.exe
+*.o
+/build/
+/dist/
+/tests/__pycache__/
