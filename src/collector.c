@@ -187,14 +187,29 @@ static int parse_essid(const char text[], char output[STRING_SIZE])
 	return 1;
 }
 
+/* Parse the quality ratio in value into point.
+ * Return 1 for a valid ratio or 0 for invalid input.
+ */
+static int parse_quality(const char value[], struct access_point *point)
+{
+	size_t separator;
+
+	point->quality = parse_natural(value, 0, '/');
+	if (point->quality < 0)
+	{
+		return 0;
+	}
+	separator = digit_end(value, 0);
+	point->quality_max = parse_natural(value, separator + 1, '\0');
+	return point->quality_max > 0 && point->quality <= point->quality_max;
+}
+
 /* Decode field into point using value and the expected cell.
  * Return the updated point, with cell_id set to zero on invalid input.
  */
 static struct access_point parse_field(struct access_point point,
 	enum field_id field, const char value[], int cell)
 {
-	size_t separator;
-
 	switch (field)
 	{
 		case FIELD_CELL:
@@ -239,14 +254,7 @@ static struct access_point parse_field(struct access_point point,
 			strcpy(point.encryption, value);
 			return point;
 		case FIELD_QUALITY:
-			point.quality = parse_natural(value, 0, '/');
-			if (point.quality < 0)
-			{
-				break;
-			}
-			separator = digit_end(value, 0);
-			point.quality_max = parse_natural(value, separator + 1, '\0');
-			if (point.quality_max > 0 && point.quality <= point.quality_max)
+			if (parse_quality(value, &point))
 			{
 				return point;
 			}
