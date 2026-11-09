@@ -1,3 +1,5 @@
+/* Author: Daniel Mihailov */
+
 #include "input.h"
 
 #include <ctype.h>
@@ -6,7 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Read one physical line, stripping LF/CRLF and draining oversized input. */
+/* Read one physical line from stream into line, stripping LF or CRLF.
+ * Returns the line status.
+ */
 enum line_status input_read_line(FILE *stream, char line[STRING_SIZE])
 {
 	size_t length;
@@ -44,8 +48,10 @@ enum line_status input_read_line(FILE *stream, char line[STRING_SIZE])
 	return ferror(stream) ? LINE_ERROR : LINE_OK;
 }
 
-/* Prompt until a complete short line is available, or input ends. */
-static int prompt_line(const char *prompt, char line[STRING_SIZE])
+/* Print prompt and read a short line into line. Returns 1 on success or 0
+ * at end of input or on error.
+ */
+static int prompt_line(const char prompt[], char line[STRING_SIZE])
 {
 	enum line_status status;
 
@@ -70,37 +76,53 @@ static int prompt_line(const char *prompt, char line[STRING_SIZE])
 	}
 }
 
-/* Convert a full line to a bounded integer, rejecting overflow and junk. */
-int input_number(const char *prompt, int minimum, int maximum, int *value)
+/* Print prompt and read an integer between minimum and maximum. Returns the
+ * integer or -1 if input ends or fails.
+ */
+int input_number(const char prompt[], int minimum, int maximum)
 {
 	char line[STRING_SIZE];
-	char *end;
+	size_t index;
 	long number;
 
 	while (prompt_line(prompt, line))
 	{
-		errno = 0;
-		number = strtol(line, &end, 10);
-		if (end != line)
+		index = 0;
+		while (isspace((unsigned char)line[index]))
 		{
-			while (isspace((unsigned char)*end))
+			index++;
+		}
+		if (line[index] == '+' || line[index] == '-')
+		{
+			index++;
+		}
+		if (isdigit((unsigned char)line[index]))
+		{
+			errno = 0;
+			number = strtol(line, NULL, 10);
+			while (isdigit((unsigned char)line[index]))
 			{
-				end++;
+				index++;
 			}
-			if (errno != ERANGE && *end == '\0' &&
+			while (isspace((unsigned char)line[index]))
+			{
+				index++;
+			}
+			if (errno != ERANGE && line[index] == '\0' &&
 				number >= minimum && number <= maximum)
 			{
-				*value = (int)number;
-				return 1;
+				return (int)number;
 			}
 		}
 		printf("Introduzca un entero entre %d y %d.\n", minimum, maximum);
 	}
-	return 0;
+	return -1;
 }
 
-/* Only the exact answers s and N are accepted, as the assignment requires. */
-int input_confirm(const char *prompt, int *yes)
+/* Print prompt and read s or N. Returns 1 for s, 0 for N, or -1 if input
+ * ends or fails.
+ */
+int input_confirm(const char prompt[])
 {
 	char line[STRING_SIZE];
 
@@ -108,10 +130,9 @@ int input_confirm(const char *prompt, int *yes)
 	{
 		if (strcmp(line, "s") == 0 || strcmp(line, "N") == 0)
 		{
-			*yes = line[0] == 's';
-			return 1;
+			return line[0] == 's';
 		}
 		puts("Responda exactamente s o N.");
 	}
-	return 0;
+	return -1;
 }

@@ -3,7 +3,7 @@
 
 Readme del programa
 
-## Entrega 1
+## Entrega 2
 
 Recolector de redes inalambricas en C. Ejecutar desde la raiz del proyecto:
 
@@ -14,17 +14,16 @@ make
 
 Requiere GCC y Make en Linux (laboratorio UC3M, maquina virtual o WSL).
 El Makefile usa `-std=c11 -Wall -Wextra -pedantic`. No requiere bibliotecas
-externas. Python 3 solo es necesario para pruebas y empaquetado:
+externas. Python 3 solo es necesario para el empaquetado:
 
 ```sh
-make test
 make package
 make clean
 ```
 
-El ZIP se genera en `dist/entrega1_wifi.zip`. Contiene una carpeta
-`entrega1_wifi/` con fuentes, cabeceras, Makefile, este README, los 21
-ficheros originales de entrada y las pruebas. No incluye `.git`, objetos
+El ZIP se genera en `dist/entrega2_wifi.zip`. Contiene una carpeta
+`entrega2_wifi/` con fuentes, cabeceras, Makefile, este README, los 21
+ficheros originales de entrada. No incluye `.git`, objetos
 ni ejecutables. Descomprimir, entrar en esa carpeta y ejecutar `make`.
 
 ### Operaciones
@@ -33,16 +32,18 @@ ni ejecutables. Descomprimir, entrar en esa carpeta y ejecutar `make`.
 | --- | --- | --- |
 | 1 | wificollector_quit | Confirmar con `s`; `N` vuelve al menu |
 | 2 | wificollector_collect | Leer todos los puntos de una celda 1-21 |
+| 6 | wificollector_sort | Mostrar los puntos por calidad decreciente |
 | 9 | wificollector_display | Mostrar todos los puntos de una celda guardada |
 | 10 | wificollector_display_all | Mostrar todo en orden de recoleccion |
 
-Las opciones 3-8 no forman parte de esta entrega. Las confirmaciones
+Las opciones 3, 4, 5, 7 y 8 no forman parte de esta entrega. Las confirmaciones
 aceptan exactamente `s` o `N`. Se repiten las preguntas tras entradas
 invalidas; el fin de entrada termina el programa limpiamente.
 
 ### Datos y decisiones
 
-- El array fijo almacena hasta 200 observaciones de puntos de acceso.
+- El array dinamico empieza con cinco posiciones y crece de cinco en cinco
+  mediante `realloc`. Se libera al salir, incluso al terminar la entrada.
 - Cada cadena tiene 80 posiciones: 79 caracteres mas el terminador nulo.
 - Los ficheros se buscan en `cells/info_cell_N.txt`, con N entre 1 y 21.
 - Cada bloque `Cell` es un punto de acceso independiente. Los 21 ficheros
@@ -51,38 +52,33 @@ invalidas; el fin de entrada termina el programa limpiamente.
   Frequency y Signal level se ignoran; no se limita el canal a 1-14.
 - Volver a recolectar una celda agrega sus observaciones de nuevo, sin
   deduplicar. No se guarda informacion al terminar el programa.
-- Los ficheros se validan completos en almacenamiento temporal fijo.
-  Un error de formato, fichero vacio, fallo de E/S o falta de capacidad
+- Los ficheros se validan completos en un array temporal dinamico.
+  Un error de formato, fichero vacio, fallo de E/S o falta de memoria
   deja todos los datos anteriores intactos; no se agregan lotes parciales.
 - Una celda no recolectada produce un mensaje de error y ofrece imprimir
   otra; una coleccion vacia muestra un mensaje informativo.
-- No se usa memoria dinamica en el codigo de la aplicacion.
+- La opcion 6 compara la fraccion de calidad actual sobre maxima. Conserva
+  el orden de recoleccion en los empates y en las opciones 9 y 10.
 
 ### Modulos e interfaces
 
-- `main.c/main.h`: menu, despacho y preguntas de cada operacion.
-- `input.c/input.h`: lectura de lineas, enteros y confirmaciones.
-- `collector.c/collector.h`: estructuras compartidas y parser de ficheros.
-  `collector_collect(data, cell, path, added)` devuelve un estado y el
-  numero agregado; en caso de error, `added` es cero.
-- `display.c/display.h`: salida de una celda o de la coleccion completa.
+- `src/main.c`: punto de entrada y bucle principal.
+- `src/menu.c` y `include/menu.h`: menu, despacho y preguntas de cada operacion.
+- `src/input.c` y `include/input.h`: lectura de lineas, enteros y confirmaciones.
+- `src/collector.c` y `include/collector.h`: datos, validacion y recoleccion.
+  `collector_collect(cell, path)` devuelve el estado y el numero agregado.
+- `src/display.c` y `include/display.h`: salida de una celda o de toda la coleccion.
 
-`main` inicializa la coleccion y pasa punteros a los modulos. Display usa
-punteros constantes. Las funciones privadas son `static`. Se usan tabs,
-llaves Allman, guardas de cabecera y comentarios conforme a la guia.
+El recolector gestiona la memoria de los arrays y devuelve por valor el
+resultado de cada carga. La lectura usa `FILE *` de la biblioteca estandar.
 
 ### Reparto propuesto y flujo GitHub
 
 | Responsable | Trabajo previsto |
 | --- | --- |
-| Dani | Menu, entrada y confirmaciones; pruebas de teclado |
-| Persona 2 | Tipos compartidos, parser y capacidad; pruebas de recoleccion |
+| Dani | Menu, entrada y confirmaciones |
+| Persona 2 | Tipos compartidos, parser y capacidad |
 | Persona 3 | Display, Makefile, README y comprobaciones de integracion |
-
-Esta tabla es un reparto propuesto, no una declaracion de autoria. La
-implementacion inicial fue preparada con Codex. Cada integrante debe
-revisar y entender su modulo; registrar aqui sus contribuciones reales
-y su nombre antes de entregar. No se han realizado revisiones humanas.
 
 Para el trabajo individual, crear `feature/menu`, `feature/collect` y
 `feature/display` desde la base compartida acordada. Para nuevas tareas
@@ -94,23 +90,15 @@ git pull --ff-only origin main
 git switch -c feature/menu
 ```
 
-Cada persona hace commits pequenos, sube su rama y abre una pull request
-hacia `main`. Otra persona revisa y ejecuta `make test` antes de fusionar.
+Cada persona hace commits pequeños, sube su rama y abre una pull request
+hacia `main`. Otra persona revisa los cambios antes de fusionar.
 No trabajar todos sobre los mismos ficheros sin coordinar los cambios.
 No subir ejecutables ni objetos. Si `main` no existe localmente, obtenerlo
 del remoto antes de seguir estos comandos.
 
 ### Validacion y entrega
 
-`make test` comprueba los 47 registros, campos representativos, ocho modos,
-CRLF, fin de fichero sin salto de linea, datos malformados, lotes atomicos,
-el limite exacto de 200, repeticion de celdas, entrada invalida o larga,
-confirmaciones, visualizacion y fin de entrada en cada pregunta.
-
 Antes de entregar, probar una extraccion nueva del ZIP en el laboratorio
-UC3M o en la maquina virtual proporcionada: `make`, `make test` y `./main`.
+UC3M o en la maquina virtual proporcionada: `make` y `./main`.
 La validacion local en WSL no sustituye esta comprobacion del equipo.
-Validacion realizada en Ubuntu WSL: compilacion sin advertencias, nueve
-pruebas automaticas aprobadas y ejecucion con AddressSanitizer y
-UndefinedBehaviorSanitizer sin errores detectados.
-Entrega 1: 16 de octubre de 2026, 23:55 (Europe/Madrid), en Aula Global.
+Entrega 2: 13 de noviembre de 2026, 23:55 (Europe/Madrid), en Aula Global.

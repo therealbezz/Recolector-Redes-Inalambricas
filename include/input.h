@@ -1,3 +1,5 @@
+/* Author: Daniel Mihailov */
+
 #ifndef INPUT_H
 #define INPUT_H
 
@@ -15,9 +17,9 @@ enum line_status
 
 /* Read at most 79 characters and consume the entire physical line. */
 enum line_status input_read_line(FILE *stream, char line[STRING_SIZE]);
-/* Read an integer in the inclusive range; return zero at end of input. */
-int input_number(const char *prompt, int minimum, int maximum, int *value);
-/* Read exactly s or N; return zero at end of input. */
-int input_confirm(const char *prompt, int *yes);
+/* Read an integer in the inclusive range; return -1 at end of input. */
+int input_number(const char prompt[], int minimum, int maximum);
+/* Read exactly s or N; return -1 at end of input. */
+int input_confirm(const char prompt[]);
 
 #endif /* INPUT_H */

@@ -1,31 +1,27 @@
 CC = gcc
 CFLAGS = -std=c11 -Wall -Wextra -pedantic
-OBJECTS = main.o input.o collector.o display.o
+CPPFLAGS += -Iinclude
 PYTHON = python3
 
-.PHONY: all clean test package
+OBJECTS = build/main.o build/menu.o build/input.o build/collector.o build/display.o
+
+.PHONY: all clean package
 
 all: main
 
 main: $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
 
-main.o: main.c main.h collector.h input.h display.h
-input.o: input.c input.h collector.h
-collector.o: collector.c collector.h input.h
-display.o: display.c display.h collector.h
+build:
+	mkdir -p $@
 
-build/test_collector: tests/test_collector.c tests/test_collector.h \
-		collector.c collector.h input.c input.h
-	mkdir -p build
-	$(CC) $(CFLAGS) $(LDFLAGS) -I. -o $@ tests/test_collector.c \
-		collector.c input.c $(LDLIBS)
+build/%.o: src/%.c | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
 
-test: main build/test_collector
-	$(PYTHON) tests/run_tests.py
+-include $(OBJECTS:.o=.d)
 
 package:
 	$(PYTHON) tools/package.py
 
 clean:
-	rm -f main main.exe $(OBJECTS) build/test_collector
+	rm -f main main.exe $(OBJECTS) $(OBJECTS:.o=.d)

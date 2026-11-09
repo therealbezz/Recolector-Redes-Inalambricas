@@ -3,4 +3,3 @@
 *.o
 /build/
 /dist/
-/tests/__pycache__/
