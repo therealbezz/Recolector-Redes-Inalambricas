@@ -72,33 +72,8 @@ invalidas; el fin de entrada termina el programa limpiamente.
 El recolector gestiona la memoria de los arrays y devuelve por valor el
 resultado de cada carga. La lectura usa `FILE *` de la biblioteca estandar.
 
-### Reparto propuesto y flujo GitHub
+### Integrantes del equipo
 
-| Responsable | Trabajo previsto |
-| --- | --- |
-| Dani | Menu, entrada y confirmaciones |
-| Persona 2 | Tipos compartidos, parser y capacidad |
-| Persona 3 | Display, Makefile, README y comprobaciones de integracion |
-
-Para el trabajo individual, crear `feature/menu`, `feature/collect` y
-`feature/display` desde la base compartida acordada. Para nuevas tareas
-despues de integrar la implementacion, actualizar primero `main`:
-
-```sh
-git switch main
-git pull --ff-only origin main
-git switch -c feature/menu
-```
-
-Cada persona hace commits pequeños, sube su rama y abre una pull request
-hacia `main`. Otra persona revisa los cambios antes de fusionar.
-No trabajar todos sobre los mismos ficheros sin coordinar los cambios.
-No subir ejecutables ni objetos. Si `main` no existe localmente, obtenerlo
-del remoto antes de seguir estos comandos.
-
-### Validacion y entrega
-
-Antes de entregar, probar una extraccion nueva del ZIP en el laboratorio
-UC3M o en la maquina virtual proporcionada: `make` y `./main`.
-La validacion local en WSL no sustituye esta comprobacion del equipo.
-Entrega 2: 13 de noviembre de 2026, 23:55 (Europe/Madrid), en Aula Global.
+- Daniel Mihailov
+- Diego Medina
+- Alba Serrano

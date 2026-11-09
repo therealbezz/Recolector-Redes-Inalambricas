@@ -1,4 +1,8 @@
-/* Author: Daniel Mihailov */
+/* Author: Daniel Mihailov
+ * Team: Daniel Mihailov, Diego Medina, Alba Serrano
+ */
+
+#include "main.h"
 
 #include <stdio.h>
 #include "collector.h"

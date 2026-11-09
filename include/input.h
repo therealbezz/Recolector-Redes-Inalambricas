@@ -1,4 +1,6 @@
-/* Author: Daniel Mihailov */
+/* Author: Daniel Mihailov
+ * Team: Daniel Mihailov, Diego Medina, Alba Serrano
+ */
 
 #ifndef INPUT_H
 #define INPUT_H

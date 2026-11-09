@@ -1,4 +1,6 @@
-/* Author: Daniel Mihailov */
+/* Author: Daniel Mihailov
+ * Team: Daniel Mihailov, Diego Medina, Alba Serrano
+ */
 
 #include "collector.h"
 #include "input.h"
@@ -304,36 +306,24 @@ static struct pending_record read_field(struct pending_record pending,
 	return pending;
 }
 
-/* Validate the requested cell file and append its records as one batch.
- * Return the status and number added. On failure, keep existing observations.
+/* Parse records from file for cell into the temporary batch.
+ * Return the collection status. The caller owns the batch storage.
  */
-struct collect_result collector_collect(int cell, const char path[])
+static enum collect_status read_batch(FILE *file, int cell,
+	struct collection *batch)
 {
-	struct collection batch = {0};
 	struct pending_record pending = {0};
-	enum collect_status status = COLLECT_OK;
 	char line[STRING_SIZE];
 	size_t length;
 	enum line_status line_result;
-	FILE *file;
 
-	if (cell < MIN_CELL || cell > MAX_CELL)
-	{
-		return (struct collect_result){COLLECT_INVALID, 0};
-	}
-	file = fopen(path, "r");
-	if (file == NULL)
-	{
-		return (struct collect_result){COLLECT_FILE_ERROR, 0};
-	}
 	for (;;)
 	{
 		line_result = input_read_line(file, line);
 		if (line_result == LINE_ERROR || line_result == LINE_LONG)
 		{
-			status = line_result == LINE_ERROR ?
+			return line_result == LINE_ERROR ?
 				COLLECT_FILE_ERROR : COLLECT_INVALID;
-			break;
 		}
 		length = line_result == LINE_OK ? strlen(line) : 0;
 		while (length > 0 && isspace((unsigned char)line[length - 1]))
@@ -345,20 +335,18 @@ struct collect_result collector_collect(int cell, const char path[])
 		{
 			if (pending.fields != ALL_FIELDS)
 			{
-				status = COLLECT_INVALID;
-				break;
+				return COLLECT_INVALID;
 			}
-			if (!reserve(&batch, batch.count + 1))
+			if (!reserve(batch, batch->count + 1))
 			{
-				status = COLLECT_NO_MEMORY;
-				break;
+				return COLLECT_NO_MEMORY;
 			}
-			batch.points[batch.count++] = pending.point;
+			batch->points[batch->count++] = pending.point;
 			pending = (struct pending_record){0};
 		}
 		if (line_result == LINE_END)
 		{
-			break;
+			return batch->count == 0 ? COLLECT_EMPTY : COLLECT_OK;
 		}
 		if (length == 0)
 		{
@@ -367,17 +355,33 @@ struct collect_result collector_collect(int cell, const char path[])
 		pending = read_field(pending, line, cell);
 		if (pending.point.cell_id == 0)
 		{
-			status = COLLECT_INVALID;
-			break;
+			return COLLECT_INVALID;
 		}
 	}
+}
+
+/* Validate the requested cell file and append its records as one batch.
+ * Return the status and number added. On failure, keep existing observations.
+ */
+struct collect_result collector_collect(int cell, const char path[])
+{
+	struct collection batch = {0};
+	enum collect_status status;
+	FILE *file;
+
+	if (cell < MIN_CELL || cell > MAX_CELL)
+	{
+		return (struct collect_result){COLLECT_INVALID, 0};
+	}
+	file = fopen(path, "r");
+	if (file == NULL)
+	{
+		return (struct collect_result){COLLECT_FILE_ERROR, 0};
+	}
+	status = read_batch(file, cell, &batch);
 	if (fclose(file) != 0)
 	{
 		status = COLLECT_FILE_ERROR;
-	}
-	if (status == COLLECT_OK && batch.count == 0)
-	{
-		status = COLLECT_EMPTY;
 	}
 	if (status == COLLECT_OK &&
 		!reserve(&collected, collected.count + batch.count))
